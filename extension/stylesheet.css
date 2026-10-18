@@ -1,0 +1,11 @@
+.claude-lights-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  margin: 0 3px;
+}
+
+.claude-lights-working { background-color: #3584e4; }
+.claude-lights-attention { background-color: #f6d32d; }
+.claude-lights-done { background-color: #33d17a; }
+.claude-lights-error { background-color: #e01b24; }
