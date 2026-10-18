@@ -8,11 +8,11 @@ which sessions are waiting for you.
 
 | Light | Meaning |
 |---|---|
-| 🔵 Blue | Working |
-| 🟡 Yellow | Needs you: permission prompt, question or plan approval |
-| 🔵 Blue ring | Turn ended, but background commands or agents are still running |
-| 🟢 Green | Done, waiting for your next prompt |
-| 🔴 Red | Turn ended with an API error |
+| <img src="docs/lights/working.svg" width="14" height="14" alt=""> Blue | Working |
+| <img src="docs/lights/attention.svg" width="14" height="14" alt=""> Yellow | Needs you: permission prompt, question or plan approval |
+| <img src="docs/lights/background.svg" width="14" height="14" alt=""> Blue ring | Turn ended, but background commands or agents are still running |
+| <img src="docs/lights/done.svg" width="14" height="14" alt=""> Green | Done, waiting for your next prompt |
+| <img src="docs/lights/error.svg" width="14" height="14" alt=""> Red | Turn ended with an API error |
 
 Lights keep their position (ordered by session start) and disappear when the
 session ends. Click them for a list with each session's title (the same one
@@ -67,6 +67,23 @@ Re-run `./install.sh` to update.
 
 Removes the extension, the hook entries (other hooks stay untouched), the hook
 script and the state files.
+
+## Development
+
+GNOME on Wayland loads extension code only at login. To try changes without
+logging out:
+
+```sh
+tools/nested.sh
+```
+
+This opens a nested GNOME Shell window with the current extension code, demo
+sessions in every state and two terminals to test jumping to a window. Close
+the window, edit, run it again.
+
+`tools/demo.sh` shows the same demo sessions in your real top bar (your real
+sessions are hidden until you stop it with Ctrl+C), for example for
+screenshots.
 
 ## Known limitations
 

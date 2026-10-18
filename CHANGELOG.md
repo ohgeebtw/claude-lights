@@ -3,6 +3,22 @@
 All notable changes to Claude Lights. Versions match the extension's
 `metadata.json` version.
 
+## 4 - 2026-10-18
+
+### Added
+
+- `tools/nested.sh`: try the extension in a nested GNOME Shell window without
+  logging out, with demo sessions and test terminals.
+- `tools/demo.sh`: made-up sessions in every state, for screenshots.
+- `CLAUDE_LIGHTS_DIR` environment variable to point the extension at another
+  state directory.
+
+### Fixed
+
+- README: the blue ring showed as a filled blue dot. The legend now uses
+  images of the real lights.
+- README screenshot shows all five states.
+
 ## 3 - 2026-10-18
 
 ### Added

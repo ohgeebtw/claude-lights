@@ -121,7 +121,8 @@ function makeDot(state) {
 
 export default class ClaudeLightsExtension extends Extension {
     enable() {
-        this._dir = Gio.File.new_for_path(
+        // CLAUDE_LIGHTS_DIR lets tools/nested.sh point a test shell at demo data.
+        this._dir = Gio.File.new_for_path(GLib.getenv('CLAUDE_LIGHTS_DIR') ||
             GLib.build_filenamev([GLib.get_user_runtime_dir(), 'claude-lights']));
         GLib.mkdir_with_parents(this._dir.get_path(), 0o700);
 
