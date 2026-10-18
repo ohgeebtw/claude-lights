@@ -98,6 +98,20 @@ function sessionName(record) {
     return '?';
 }
 
+// Claude Code sets the terminal title to the session title, prefixed with a
+// status glyph such as "✳ ". Prefer an exact match after the glyph.
+function findTerminalWindow(title) {
+    if (typeof title !== 'string' || !title)
+        return null;
+    const windows = global.get_window_actors()
+        .map(actor => actor.meta_window)
+        .filter(win => win && !win.skip_taskbar);
+    const strip = t => (t ?? '').replace(/^[^\p{L}\p{N}]+/u, '').trim();
+    return windows.find(win => strip(win.get_title()) === title) ??
+        windows.find(win => (win.get_title() ?? '').includes(title)) ??
+        null;
+}
+
 function makeDot(state) {
     return new St.Widget({
         style_class: `claude-lights-dot claude-lights-${state}`,
@@ -166,9 +180,15 @@ export default class ClaudeLightsExtension extends Extension {
         for (const s of sessions) {
             this._box.add_child(makeDot(s.state));
             const item = new PopupMenu.PopupMenuItem(
-                `${sessionName(s)}: ${LABELS[s.state]} (${elapsed(s.updated ?? s.started)})`,
-                {reactive: false});
+                `${sessionName(s)}: ${LABELS[s.state]} (${elapsed(s.updated ?? s.started)})`);
             item.insert_child_at_index(makeDot(s.state), 0);
+            item.connect('activate', () => {
+                const win = findTerminalWindow(s.title);
+                if (win)
+                    Main.activateWindow(win);
+                else
+                    Main.notify(this.metadata.name, `No window titled "${sessionName(s)}" found`);
+            });
             this._button.menu.addMenuItem(item);
         }
     }

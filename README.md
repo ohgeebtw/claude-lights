@@ -17,7 +17,7 @@ which sessions are waiting for you.
 Lights keep their position (ordered by session start) and disappear when the
 session ends. Click them for a list with each session's title (the same one
 your terminal shows, or the name set with `/rename`), state and time in that
-state.
+state. Click a session to jump to its terminal window.
 
 ## How it works
 
@@ -73,6 +73,9 @@ script and the state files.
 - Interrupting Claude with Esc may not fire a stop event. The light stays blue
   until Claude's idle notification turns it green (about a minute).
 - Only sessions started on this machine under your user are shown.
+- Jumping to a terminal matches the window title, so it can't reach a session
+  in a background tab, and picks the first window when two sessions share a
+  title.
 
 ## License
 

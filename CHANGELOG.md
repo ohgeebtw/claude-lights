@@ -3,6 +3,14 @@
 All notable changes to Claude Lights. Versions match the extension's
 `metadata.json` version.
 
+## 3 - 2026-10-18
+
+### Added
+
+- Click a session in the menu to bring its terminal window to the front,
+  matched by the session title in the window title. Sessions in background
+  terminal tabs can't be found.
+
 ## 2 - 2026-10-18
 
 ### Added
