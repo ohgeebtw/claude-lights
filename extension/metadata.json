@@ -4,5 +4,5 @@
   "description": "One top bar light per running Claude Code session: blue while working, yellow when it needs you, green when done, red on error.",
   "shell-version": ["45", "46", "47", "48", "49"],
   "url": "https://github.com/ohgeebtw/claude-lights",
-  "version": 1
+  "version": 2
 }

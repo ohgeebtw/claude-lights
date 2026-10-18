@@ -18,6 +18,7 @@ Gio._promisify(Gio.FileEnumerator.prototype, 'next_files_async');
 const LABELS = {
     working: 'working',
     attention: 'needs you',
+    background: 'background work running',
     done: 'done',
     error: 'error',
 };
@@ -89,6 +90,14 @@ function elapsed(since) {
     return `${Math.floor(s / 3600)}h`;
 }
 
+function sessionName(record) {
+    if (typeof record.title === 'string' && record.title)
+        return record.title;
+    if (typeof record.cwd === 'string' && record.cwd)
+        return GLib.path_get_basename(record.cwd);
+    return '?';
+}
+
 function makeDot(state) {
     return new St.Widget({
         style_class: `claude-lights-dot claude-lights-${state}`,
@@ -156,9 +165,8 @@ export default class ClaudeLightsExtension extends Extension {
 
         for (const s of sessions) {
             this._box.add_child(makeDot(s.state));
-            const folder = typeof s.cwd === 'string' && s.cwd ? GLib.path_get_basename(s.cwd) : '?';
             const item = new PopupMenu.PopupMenuItem(
-                `${folder}: ${LABELS[s.state]} (${elapsed(s.updated ?? s.started)})`,
+                `${sessionName(s)}: ${LABELS[s.state]} (${elapsed(s.updated ?? s.started)})`,
                 {reactive: false});
             item.insert_child_at_index(makeDot(s.state), 0);
             this._button.menu.addMenuItem(item);

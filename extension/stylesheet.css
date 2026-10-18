@@ -7,5 +7,10 @@
 
 .claude-lights-working { background-color: #3584e4; }
 .claude-lights-attention { background-color: #f6d32d; }
+.claude-lights-background {
+  border: 2px solid #3584e4;
+  width: 6px;
+  height: 6px;
+}
 .claude-lights-done { background-color: #33d17a; }
 .claude-lights-error { background-color: #e01b24; }

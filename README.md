@@ -4,16 +4,20 @@ A GNOME Shell extension that shows one light in the top bar for every running
 [Claude Code](https://code.claude.com) session, so you can see at a glance
 which sessions are waiting for you.
 
+![Claude Lights in the GNOME top bar](docs/screenshot.png)
+
 | Light | Meaning |
 |---|---|
 | 🔵 Blue | Working |
 | 🟡 Yellow | Needs you: permission prompt, question or plan approval |
+| 🔵 Blue ring | Turn ended, but background commands or agents are still running |
 | 🟢 Green | Done, waiting for your next prompt |
 | 🔴 Red | Turn ended with an API error |
 
 Lights keep their position (ordered by session start) and disappear when the
-session ends. Click them for a list with each session's folder, state and
-time in that state.
+session ends. Click them for a list with each session's title (the same one
+your terminal shows, or the name set with `/rename`), state and time in that
+state.
 
 ## How it works
 
@@ -24,7 +28,8 @@ directory and draws the lights. Sessions whose Claude process is gone are
 removed automatically.
 
 Nothing leaves your machine: no network access, no telemetry. The state files
-hold only the session's state, working directory, process ID and timestamps,
+hold only the session's state, title, working directory, process ID and
+timestamps,
 and live in your private runtime directory (cleared on logout).
 
 ## Requirements

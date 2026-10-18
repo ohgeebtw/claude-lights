@@ -5,7 +5,8 @@ Reads a hook event from stdin and records the session's state in
 $XDG_RUNTIME_DIR/claude-lights/<session_id>.json, which the GNOME Shell
 extension renders as one top bar light per session.
 
-States: working, attention, done, error. SessionEnd removes the file.
+States: working, attention, background (turn ended but background tasks
+are still running), done, error. SessionEnd removes the file.
 Stdlib only. Never fails the hook: every error exits 0 silently.
 """
 import json
@@ -22,6 +23,10 @@ ATTENTION_NOTIFICATIONS = {
 }
 ATTENTION_TOOLS = {"AskUserQuestion", "ExitPlanMode"}
 SESSION_ID = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
+# Events after which the session title may have changed.
+TITLE_EVENTS = {"SessionStart", "UserPromptSubmit", "Stop", "StopFailure"}
+TITLE_TAIL_BYTES = 256 * 1024
+AI_TITLE = re.compile(rb'"type":"ai-title","aiTitle":("(?:[^"\\]|\\.)*")')
 
 
 def state_dir():
@@ -73,10 +78,40 @@ def state_for(data):
             return "done"
         return None
     if event == "Stop":
-        return "done"
+        tasks = data.get("background_tasks")
+        return "background" if isinstance(tasks, list) and tasks else "done"
     if event == "StopFailure":
         return "error"
     return None
+
+
+def generated_title(transcript_path):
+    """Return the latest generated session title from the transcript tail."""
+    if not isinstance(transcript_path, str):
+        return None
+    try:
+        with open(transcript_path, "rb") as f:
+            f.seek(0, os.SEEK_END)
+            f.seek(max(0, f.tell() - TITLE_TAIL_BYTES))
+            tail = f.read()
+        matches = AI_TITLE.findall(tail)
+        return json.loads(matches[-1]) if matches else None
+    except (OSError, ValueError):
+        return None
+
+
+def session_title(data, record):
+    """Custom title (/rename, --name) wins over the generated one."""
+    custom = data.get("session_title")
+    if isinstance(custom, str) and custom:
+        record["custom_title"] = custom[:200]
+    if record.get("custom_title"):
+        return record["custom_title"]
+    if data.get("hook_event_name") in TITLE_EVENTS:
+        title = generated_title(data.get("transcript_path"))
+        if isinstance(title, str) and title:
+            return title[:200]
+    return record.get("title")
 
 
 def main():
@@ -107,11 +142,23 @@ def main():
             raise ValueError
     except (OSError, ValueError):
         record = {"started": now}
+
+    event = data.get("hook_event_name")
+    if event == "UserPromptSubmit":
+        record["turn_active"] = True
+    elif event in ("Stop", "StopFailure"):
+        record["turn_active"] = False
+    # Subagent tool events after the main turn ended are background work,
+    # not Claude working on your prompt.
+    if data.get("agent_id") and state == "working" and record.get("turn_active") is False:
+        state = "background"
+
     pid, comm = claude_process()
     cwd = data.get("cwd")
     record.update(
         state=state,
         cwd=cwd if isinstance(cwd, str) else record.get("cwd", ""),
+        title=session_title(data, record),
         pid=pid,
         comm=comm,
         updated=now,
