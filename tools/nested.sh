@@ -17,9 +17,8 @@ install -m 644 "$repo"/extension/{extension.js,metadata.json,stylesheet.css} "$e
 major=$(gnome-shell --version | grep -oE '[0-9]+' | head -1)
 if (( major >= 49 )); then flag=--devkit; else flag=--nested; fi
 
-"$repo/tools/demo.sh" --dir "$CLAUDE_LIGHTS_DIR" >/dev/null &
-demo=$!
-trap 'kill $demo 2>/dev/null; rm -rf "$CLAUDE_LIGHTS_DIR"' EXIT
+mkdir -p -m 700 "$CLAUDE_LIGHTS_DIR"
+trap 'pkill -f "demo.sh --dir $CLAUDE_LIGHTS_DIR" 2>/dev/null; rm -rf "$CLAUDE_LIGHTS_DIR"' EXIT
 
 dbus-run-session -- bash -c '
     display=claude-lights-nested
@@ -29,6 +28,8 @@ dbus-run-session -- bash -c '
     gdbus wait --session --timeout 30 org.gnome.Shell || true
     sleep 2
     gnome-extensions enable '"$uuid"' 2>/dev/null || true
+    # Started after the shell, so the demo lights count as new and pulse.
+    "'"$repo"'/tools/demo.sh" --dir "$CLAUDE_LIGHTS_DIR" >/dev/null &
     # Terminals titled like demo sessions, so clicking a session in the menu
     # has a window to jump to.
     if command -v ghostty >/dev/null; then

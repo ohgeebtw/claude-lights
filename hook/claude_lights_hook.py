@@ -152,9 +152,16 @@ def main():
     # not Claude working on your prompt.
     if data.get("agent_id") and state == "working" and record.get("turn_active") is False:
         state = "background"
+    # The idle notification is a fallback for turns that ended without a Stop
+    # (Esc). It must not hide a ring, a pending question or an error.
+    if event == "Notification" and data.get("notification_type") == "idle_prompt" \
+            and record.get("state") not in (None, "working"):
+        return
 
     pid, comm = claude_process()
     cwd = data.get("cwd")
+    if record.get("state") != state or "since" not in record:
+        record["since"] = now
     record.update(
         state=state,
         cwd=cwd if isinstance(cwd, str) else record.get("cwd", ""),

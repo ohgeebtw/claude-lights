@@ -10,12 +10,18 @@ which sessions are waiting for you.
 |---|---|
 | <img src="docs/lights/working.svg" width="14" height="14" alt=""> Blue | Working |
 | <img src="docs/lights/attention.svg" width="14" height="14" alt=""> Yellow | Needs you: permission prompt, question or plan approval |
-| <img src="docs/lights/background.svg" width="14" height="14" alt=""> Blue ring | Turn ended, but background commands or agents are still running |
+| <img src="docs/lights/replied.svg" width="14" height="14" alt=""> Green ring | Claude replied, background commands or agents are still running |
+| <img src="docs/lights/background.svg" width="14" height="14" alt=""> Blue ring | Background work still running, and you have seen the last reply |
 | <img src="docs/lights/done.svg" width="14" height="14" alt=""> Green | Done, waiting for your next prompt |
 | <img src="docs/lights/error.svg" width="14" height="14" alt=""> Red | Turn ended with an API error |
 
-Lights keep their position (ordered by session start) and disappear when the
-session ends. Click them for a list with each session's title (the same one
+Yellow, green, the green ring and red pulse until you have seen them: focus
+that session's terminal window, jump to it from the menu or send it a message.
+A seen green ring turns into a blue ring. A light that changes to a new state
+pulses again. Blue lights never pulse, they're work in progress.
+
+Lights keep their position (ordered by session start; drag them by the
+grip in the menu) and disappear when the session ends. Click them for a list with each session's title (the same one
 your terminal shows, or the name set with `/rename`), state and time in that
 state. Click a session to jump to its terminal window.
 

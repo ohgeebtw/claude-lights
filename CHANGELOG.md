@@ -3,6 +3,26 @@
 All notable changes to Claude Lights. Versions match the extension's
 `metadata.json` version.
 
+## 5 - 2026-10-19
+
+### Added
+
+- Yellow, green and red pulse until you have seen them, meaning you focused
+  the session's terminal window or jumped to it from the menu. Lights in the
+  menu pulse too.
+- Green ring: Claude replied while background work keeps running. It pulses
+  until seen, then turns into the still blue ring.
+- Reorder sessions by dragging a row's grip handle in the menu. The top bar
+  follows.
+- The menu shows how long a session has been in its current state, not since
+  its last event.
+
+### Fixed
+
+- Claude Code's idle notification, about a minute after a turn, turned a blue
+  ring, yellow or red light green. It now only ends a "working" light, for
+  turns interrupted with Esc.
+
 ## 4 - 2026-10-18
 
 ### Added
