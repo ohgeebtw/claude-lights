@@ -25,6 +25,7 @@ EVENTS = [
     "Notification",
     "Stop",
     "StopFailure",
+    "SubagentStop",
 ]
 
 

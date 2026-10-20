@@ -40,8 +40,8 @@ comm=$(cat /proc/$$/comm)
 i=0
 while IFS='|' read -r state title age; do
     i=$((i + 1))
-    printf '{"started":%s,"state":"%s","title":"%s","cwd":"/home/user/project","pid":%s,"comm":"%s","updated":%s}\n' \
-        $((now - 3600 + i)) "$state" "$title" $$ "$comm" $((now - age)) > "$dir/demo-$i.json"
+    printf '{"started":%s,"state":"%s","title":"%s","cwd":"/home/user/project","pid":%s,"comm":"%s","updated":%s,"since":%s,"tasks":["shell: npm run build","subagent: Review migration plan"]}\n' \
+        $((now - 3600 + i)) "$state" "$title" $$ "$comm" $((now - age)) $((now - age)) > "$dir/demo-$i.json"
 done <<'DATA'
 working|Add dark mode to settings page|8
 attention|Fix flaky login test|25

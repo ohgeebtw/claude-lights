@@ -3,6 +3,20 @@
 All notable changes to Claude Lights. Versions match the extension's
 `metadata.json` version.
 
+## 6 - 2026-10-21
+
+### Added
+
+- The menu lists what a blue ring is waiting for, such as
+  `shell: npm run build`, under the session.
+
+### Fixed
+
+- A session kept a blue ring after its background work had finished: tasks
+  Claude Code still listed as completed, stopped or failed counted as running,
+  and a background agent finishing after the turn didn't update the light.
+  The hook now ignores finished tasks and also listens to SubagentStop.
+
 ## 5 - 2026-10-19
 
 ### Added

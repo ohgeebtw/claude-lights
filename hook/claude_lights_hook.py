@@ -27,6 +27,8 @@ SESSION_ID = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 TITLE_EVENTS = {"SessionStart", "UserPromptSubmit", "Stop", "StopFailure"}
 TITLE_TAIL_BYTES = 256 * 1024
 AI_TITLE = re.compile(rb'"type":"ai-title","aiTitle":("(?:[^"\\]|\\.)*")')
+# Background tasks in these states no longer keep a session busy.
+FINISHED_TASK_STATES = {"completed", "failed", "killed", "stopped", "cancelled", "canceled"}
 
 
 def state_dir():
@@ -78,11 +80,33 @@ def state_for(data):
             return "done"
         return None
     if event == "Stop":
-        tasks = data.get("background_tasks")
-        return "background" if isinstance(tasks, list) and tasks else "done"
+        return "background" if running_tasks(data) else "done"
     if event == "StopFailure":
         return "error"
     return None
+
+
+def running_tasks(data, exclude_agent=None):
+    """Background tasks from a Stop or SubagentStop event that still run."""
+    tasks = data.get("background_tasks")
+    if not isinstance(tasks, list):
+        return []
+    return [
+        t for t in tasks
+        if isinstance(t, dict)
+        and t.get("status") not in FINISHED_TASK_STATES
+        and not (exclude_agent and t.get("id") == exclude_agent)
+    ]
+
+
+def task_summary(tasks):
+    """Short descriptions for the menu, such as "shell: tail logs"."""
+    summary = []
+    for t in tasks[:5]:
+        kind = t.get("type") if isinstance(t.get("type"), str) else "task"
+        text = t.get("description") or t.get("command") or t.get("name") or ""
+        summary.append(f"{kind}: {text}"[:80] if isinstance(text, str) and text else kind)
+    return summary
 
 
 def generated_title(transcript_path):
@@ -130,7 +154,7 @@ def main():
         return
 
     state = state_for(data)
-    if state is None:
+    if state is None and data.get("hook_event_name") != "SubagentStop":
         return
 
     os.makedirs(directory, mode=0o700, exist_ok=True)
@@ -152,6 +176,16 @@ def main():
     # not Claude working on your prompt.
     if data.get("agent_id") and state == "working" and record.get("turn_active") is False:
         state = "background"
+    if event == "Stop":
+        record["tasks"] = task_summary(running_tasks(data))
+    # A background agent finished after the turn: if nothing else runs, the
+    # session is done. Claude may not wake up to fire another Stop.
+    if event == "SubagentStop":
+        if record.get("turn_active") is not False or record.get("state") != "background":
+            return
+        remaining = running_tasks(data, exclude_agent=data.get("agent_id"))
+        record["tasks"] = task_summary(remaining)
+        state = "background" if remaining else "done"
     # The idle notification is a fallback for turns that ended without a Stop
     # (Esc). It must not hide a ring, a pending question or an error.
     if event == "Notification" and data.get("notification_type") == "idle_prompt" \

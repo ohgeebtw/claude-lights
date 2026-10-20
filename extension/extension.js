@@ -313,8 +313,20 @@ export default class ClaudeLightsExtension extends Extension {
             }
             this._button.visible = this._sessions.length > 0;
         }
-        for (const s of this._sessions)
-            this._labels.get(s.id)?.set_text(this._itemText(s));
+        for (const s of this._sessions) {
+            const labels = this._labels.get(s.id);
+            labels?.main.set_text(this._itemText(s));
+            labels?.tasks.set_text(this._tasksText(s));
+            if (labels)
+                labels.tasks.visible = labels.tasks.text !== '';
+        }
+    }
+
+    // What a ring is waiting for, as reported by Claude Code.
+    _tasksText(s) {
+        if (s.state !== 'background' || !Array.isArray(s.tasks))
+            return '';
+        return s.tasks.filter(t => typeof t === 'string').join('\n');
     }
 
     _itemText(s) {
@@ -397,14 +409,19 @@ export default class ClaudeLightsExtension extends Extension {
         const item = new PopupMenu.PopupBaseMenuItem();
         const menuDot = makeDot(this._displayState(s));
         item.add_child(menuDot);
-        const label = new St.Label({
-            text: this._itemText(s),
+        const text = new St.BoxLayout({
+            vertical: true,
             x_expand: true,
             y_align: Clutter.ActorAlign.CENTER,
         });
-        item.add_child(label);
+        const label = new St.Label({text: this._itemText(s)});
+        const tasks = new St.Label({style_class: 'claude-lights-tasks', text: this._tasksText(s)});
+        tasks.visible = tasks.text !== '';
+        text.add_child(label);
+        text.add_child(tasks);
+        item.add_child(text);
         item.label_actor = label;
-        this._labels.set(s.id, label);
+        this._labels.set(s.id, {main: label, tasks});
 
         item.add_child(this._makeHandle(s.id, item));
 
