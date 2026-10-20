@@ -43,7 +43,14 @@ async function isAlive(record) {
     try {
         const comm = await readText(Gio.File.new_for_path(`/proc/${record.pid}/comm`));
         // A reused PID belongs to a different program.
-        return !record.comm || comm.trim() === record.comm;
+        if (record.comm && comm.trim() !== record.comm)
+            return false;
+        // Fields after the ")" that ends the command name: state is first,
+        // the controlling terminal fifth. A stopped process (Ctrl+Z) whose
+        // terminal was closed lingers forever but will never act again.
+        const stat = await readText(Gio.File.new_for_path(`/proc/${record.pid}/stat`));
+        const fields = stat.slice(stat.lastIndexOf(')') + 2).split(' ');
+        return !(['T', 't'].includes(fields[0]) && fields[4] === '0');
     } catch {
         return false;
     }

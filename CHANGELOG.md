@@ -3,6 +3,14 @@
 All notable changes to Claude Lights. Versions match the extension's
 `metadata.json` version.
 
+## 7 - 2026-10-21
+
+### Fixed
+
+- A closed session kept its light when its Claude process had been suspended
+  (Ctrl+Z) before the terminal closed: the stopped process lingers without a
+  terminal. Such processes now count as ended.
+
 ## 6 - 2026-10-21
 
 ### Added
