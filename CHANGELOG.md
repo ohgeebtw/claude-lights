@@ -3,6 +3,14 @@
 All notable changes to Claude Lights. Versions match the extension's
 `metadata.json` version.
 
+## 8 - 2026-10-21
+
+### Fixed
+
+- An idle session showed a blue ring while Claude Code watched an artifact
+  for live updates. Such watchers wait indefinitely for comments and no
+  longer count as background work.
+
 ## 7 - 2026-10-21
 
 ### Fixed

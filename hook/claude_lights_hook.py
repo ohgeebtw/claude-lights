@@ -29,6 +29,9 @@ TITLE_TAIL_BYTES = 256 * 1024
 AI_TITLE = re.compile(rb'"type":"ai-title","aiTitle":("(?:[^"\\]|\\.)*")')
 # Background tasks in these states no longer keep a session busy.
 FINISHED_TASK_STATES = {"completed", "failed", "killed", "stopped", "cancelled", "canceled"}
+# Watchers that wait indefinitely for outside events, such as comments on an
+# artifact. They are not work you wait for.
+PASSIVE_TASK = re.compile(r"^live updates for artifact\b", re.I)
 
 
 def state_dir():
@@ -95,6 +98,7 @@ def running_tasks(data, exclude_agent=None):
         t for t in tasks
         if isinstance(t, dict)
         and t.get("status") not in FINISHED_TASK_STATES
+        and not (isinstance(t.get("description"), str) and PASSIVE_TASK.match(t["description"]))
         and not (exclude_agent and t.get("id") == exclude_agent)
     ]
 
