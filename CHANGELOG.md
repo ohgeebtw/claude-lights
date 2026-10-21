@@ -3,6 +3,20 @@
 All notable changes to Claude Lights. Versions match the extension's
 `metadata.json` version.
 
+## 9 - 2026-10-21
+
+### Fixed
+
+- Headless runs (`claude -p` started by scripts or tools) got a light with no
+  window behind it. Sessions without a terminal are now skipped.
+- A session lost its window when Claude Code renamed it mid-turn. The hook
+  now also refreshes the title after each tool call, and the extension
+  remembers a session's window once matched, even if the title changes.
+- A session renamed with `/rename` kept its old name until your next
+  message. The hook now reads the new name from the session log.
+- A pulsing light with no matching window could not be stopped. Clicking a
+  session in the menu now always counts as seen.
+
 ## 8 - 2026-10-21
 
 ### Fixed

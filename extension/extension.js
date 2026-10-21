@@ -177,6 +177,9 @@ export default class ClaudeLightsExtension extends Extension {
         this._seen = new Map();
         // Session id -> menu label, updated in place between rebuilds.
         this._labels = new Map();
+        // Session id -> its terminal window, remembered once matched by
+        // title so a renamed session keeps its window.
+        this._windows = new Map();
         // Session id -> {item, dot}, for reordering in place while dragging.
         this._rows = new Map();
         this._drag = null;
@@ -216,6 +219,7 @@ export default class ClaudeLightsExtension extends Extension {
         this._seen = null;
         this._labels = null;
         this._rows = null;
+        this._windows = null;
         this._drag = null;
         this._signature = null;
         this._loaded = false;
@@ -244,6 +248,10 @@ export default class ClaudeLightsExtension extends Extension {
             if (!ids.has(id))
                 this._seen.delete(id);
         }
+        for (const id of this._windows.keys()) {
+            if (!ids.has(id))
+                this._windows.delete(id);
+        }
         this._order = this._order.filter(id => ids.has(id));
         for (const s of sessions) {
             if (!this._order.includes(s.id))
@@ -261,13 +269,29 @@ export default class ClaudeLightsExtension extends Extension {
         this._render();
     }
 
+    // The session's terminal: the remembered window while it is still open,
+    // else the window whose title matches now.
+    _windowFor(s) {
+        const known = this._windows.get(s.id);
+        if (known && known.get_compositor_private())
+            return known;
+        const win = findTerminalWindow(s.title);
+        if (win)
+            this._windows.set(s.id, win);
+        else
+            this._windows.delete(s.id);
+        return win;
+    }
+
     // Marks the sessions shown in the focused window as seen. Returns true
     // if that stopped a pulse.
     _markFocusedSeen() {
         const win = global.display.focus_window;
         let changed = false;
         for (const s of this._sessions) {
-            if (titleMatches(win, s.title)) {
+            if (titleMatches(win, s.title))
+                this._windows.set(s.id, win);
+            if (win && this._windows.get(s.id) === win) {
                 changed ||= this._pulses(s);
                 this._seen.set(s.id, Date.now() / 1000);
             }
@@ -433,13 +457,13 @@ export default class ClaudeLightsExtension extends Extension {
         item.add_child(this._makeHandle(s.id, item));
 
         item.connect('activate', () => {
-            const win = findTerminalWindow(s.title);
-            if (!win) {
-                Main.notify(this.metadata.name, `No window titled "${sessionName(s)}" found`);
-                return;
-            }
+            // Clicking counts as seen even without a window to jump to.
             this._seen.set(s.id, Date.now() / 1000);
-            Main.activateWindow(win);
+            const win = this._windowFor(s);
+            if (win)
+                Main.activateWindow(win);
+            else
+                Main.notify(this.metadata.name, `No window titled "${sessionName(s)}" found`);
             this._render();
         });
         return {item, menuDot};

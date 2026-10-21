@@ -23,10 +23,13 @@ ATTENTION_NOTIFICATIONS = {
 }
 ATTENTION_TOOLS = {"AskUserQuestion", "ExitPlanMode"}
 SESSION_ID = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
-# Events after which the session title may have changed.
-TITLE_EVENTS = {"SessionStart", "UserPromptSubmit", "Stop", "StopFailure"}
+# Events after which the session title may have changed. Claude Code renames
+# sessions mid-turn too, and the terminal title follows at once.
+TITLE_EVENTS = {"SessionStart", "UserPromptSubmit", "PostToolUse", "Stop", "StopFailure"}
 TITLE_TAIL_BYTES = 256 * 1024
 AI_TITLE = re.compile(rb'"type":"ai-title","aiTitle":("(?:[^"\\]|\\.)*")')
+# Written by /rename; hooks only see it with the next prompt.
+CUSTOM_TITLE = re.compile(rb'"type":"custom-title","customTitle":("(?:[^"\\]|\\.)*")')
 # Background tasks in these states no longer keep a session busy.
 FINISHED_TASK_STATES = {"completed", "failed", "killed", "stopped", "cancelled", "canceled"}
 # Watchers that wait indefinitely for outside events, such as comments on an
@@ -49,20 +52,25 @@ def read_proc(pid, name):
 
 
 def claude_process():
-    """Return (pid, comm) of the Claude Code process running this hook."""
+    """Return (pid, comm, tty) of the Claude Code process running this hook.
+
+    tty is the controlling terminal number, 0 when there is none.
+    """
     pid = os.getppid()
     while pid > 1:
         try:
             comm = read_proc(pid, "comm").decode(errors="replace").strip()
             argv = read_proc(pid, "cmdline").split(b"\0")
             names = {os.path.basename(a.decode(errors="replace")) for a in argv[:2]}
+            # Fields after the ")" that ends the name: state, ppid, pgrp,
+            # session, tty_nr.
+            fields = read_proc(pid, "stat").decode(errors="replace").rsplit(")", 1)[1].split()
             if comm == "claude" or "claude" in names or "cli.js" in names:
-                return pid, comm
-            stat = read_proc(pid, "stat").decode(errors="replace")
-            pid = int(stat.rsplit(")", 1)[1].split()[1])
+                return pid, comm, int(fields[4])
+            pid = int(fields[1])
         except (OSError, ValueError, IndexError):
             break
-    return None, None
+    return None, None, None
 
 
 def state_for(data):
@@ -113,33 +121,39 @@ def task_summary(tasks):
     return summary
 
 
-def generated_title(transcript_path):
-    """Return the latest generated session title from the transcript tail."""
+def transcript_titles(transcript_path):
+    """Return the latest (custom, generated) titles from the transcript tail."""
     if not isinstance(transcript_path, str):
-        return None
+        return None, None
     try:
         with open(transcript_path, "rb") as f:
             f.seek(0, os.SEEK_END)
             f.seek(max(0, f.tell() - TITLE_TAIL_BYTES))
             tail = f.read()
-        matches = AI_TITLE.findall(tail)
-        return json.loads(matches[-1]) if matches else None
-    except (OSError, ValueError):
-        return None
+    except OSError:
+        return None, None
+
+    def latest(pattern):
+        matches = pattern.findall(tail)
+        try:
+            title = json.loads(matches[-1]) if matches else None
+        except ValueError:
+            return None
+        return title[:200] if isinstance(title, str) and title else None
+
+    return latest(CUSTOM_TITLE), latest(AI_TITLE)
 
 
 def session_title(data, record):
     """Custom title (/rename, --name) wins over the generated one."""
     custom = data.get("session_title")
+    generated = None
+    if data.get("hook_event_name") in TITLE_EVENTS:
+        logged, generated = transcript_titles(data.get("transcript_path"))
+        custom = custom or logged
     if isinstance(custom, str) and custom:
         record["custom_title"] = custom[:200]
-    if record.get("custom_title"):
-        return record["custom_title"]
-    if data.get("hook_event_name") in TITLE_EVENTS:
-        title = generated_title(data.get("transcript_path"))
-        if isinstance(title, str) and title:
-            return title[:200]
-    return record.get("title")
+    return record.get("custom_title") or generated or record.get("title")
 
 
 def main():
@@ -151,6 +165,16 @@ def main():
     path = os.path.join(directory, f"{session_id}.json")
 
     if data.get("hook_event_name") == "SessionEnd":
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
+        return
+
+    pid, comm, tty = claude_process()
+    # Headless runs (claude -p from scripts and tools) have no terminal to
+    # look at, so they get no light.
+    if tty == 0:
         try:
             os.remove(path)
         except FileNotFoundError:
@@ -196,7 +220,6 @@ def main():
             and record.get("state") not in (None, "working"):
         return
 
-    pid, comm = claude_process()
     cwd = data.get("cwd")
     if record.get("state") != state or "since" not in record:
         record["since"] = now
