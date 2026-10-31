@@ -16,6 +16,9 @@ python3 "$repo/tools/claude_settings.py" install "$hook_dir/claude_lights_hook.p
 
 install -d "$ext_dir"
 install -m 644 "$repo"/extension/{extension.js,metadata.json,stylesheet.css} "$ext_dir/"
+install -d "$ext_dir/schemas"
+install -m 644 "$repo"/extension/schemas/*.gschema.xml "$ext_dir/schemas/"
+glib-compile-schemas "$ext_dir/schemas"
 
 if gnome-extensions enable "$uuid" 2>/dev/null; then
     echo "Extension enabled."

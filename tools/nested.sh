@@ -13,6 +13,9 @@ export CLAUDE_LIGHTS_DIR="$XDG_RUNTIME_DIR/claude-lights-demo"
 # code until the next login.
 install -d "$ext_dir"
 install -m 644 "$repo"/extension/{extension.js,metadata.json,stylesheet.css} "$ext_dir/"
+install -d "$ext_dir/schemas"
+install -m 644 "$repo"/extension/schemas/*.gschema.xml "$ext_dir/schemas/"
+glib-compile-schemas "$ext_dir/schemas"
 
 major=$(gnome-shell --version | grep -oE '[0-9]+' | head -1)
 if (( major >= 49 )); then flag=--devkit; else flag=--nested; fi

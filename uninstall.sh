@@ -8,6 +8,7 @@ data="${XDG_DATA_HOME:-$HOME/.local/share}"
 
 gnome-extensions disable "$uuid" 2>/dev/null || true
 rm -rf "$data/gnome-shell/extensions/$uuid"
+dconf reset -f /org/gnome/shell/extensions/claude-lights/ 2>/dev/null || true
 python3 "$repo/tools/claude_settings.py" uninstall
 rm -rf "$data/claude-lights"
 [[ -n "${XDG_RUNTIME_DIR:-}" ]] && rm -rf "$XDG_RUNTIME_DIR/claude-lights"

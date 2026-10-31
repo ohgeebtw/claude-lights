@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.claude-lights"
+          path="/org/gnome/shell/extensions/claude-lights/">
+    <key name="sounds" type="b">
+      <default>true</default>
+      <summary>Play sounds</summary>
+      <description>Play a sound when a light starts to pulse yellow, green or red.</description>
+    </key>
+  </schema>
+</schemalist>

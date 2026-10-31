@@ -27,6 +27,13 @@ const LABELS = {
 // These pulse until you have looked at the session's terminal: each means
 // Claude replied, asked or failed. Working and the blue ring stay still.
 const PULSE_STATES = new Set(['attention', 'replied', 'done', 'error']);
+// Theme sounds played when a light starts to pulse.
+const SOUNDS = {
+    attention: 'window-attention',
+    replied: 'message-new-instant',
+    done: 'message-new-instant',
+    error: 'window-attention',
+};
 // Catches sessions whose Claude process died without a SessionEnd hook.
 const POLL_SECONDS = 5;
 
@@ -183,6 +190,12 @@ export default class ClaudeLightsExtension extends Extension {
         // Session id -> {item, dot}, for reordering in place while dragging.
         this._rows = new Map();
         this._drag = null;
+        // Session id -> the pulse it last played a sound for.
+        this._sounded = new Map();
+        this._settings = this.getSettings();
+        // Keeps the menu switch in sync when the setting changes elsewhere.
+        this._soundsId = this._settings.connect('changed::sounds', () =>
+            this._soundsItem?.setToggleState(this._settings.get_boolean('sounds')));
         this._focusId = global.display.connect('notify::focus-window', () => {
             if (this._markFocusedSeen())
                 this._render();
@@ -205,6 +218,8 @@ export default class ClaudeLightsExtension extends Extension {
         if (this._focusId)
             global.display.disconnect(this._focusId);
         this._drag?.grab.dismiss();
+        if (this._soundsId)
+            this._settings.disconnect(this._soundsId);
         this._monitor?.cancel();
         this._button?.destroy();
         this._timer = null;
@@ -221,6 +236,10 @@ export default class ClaudeLightsExtension extends Extension {
         this._rows = null;
         this._windows = null;
         this._drag = null;
+        this._sounded = null;
+        this._soundsId = null;
+        this._soundsItem = null;
+        this._settings = null;
         this._signature = null;
         this._loaded = false;
     }
@@ -252,6 +271,10 @@ export default class ClaudeLightsExtension extends Extension {
             if (!ids.has(id))
                 this._windows.delete(id);
         }
+        for (const id of this._sounded.keys()) {
+            if (!ids.has(id))
+                this._sounded.delete(id);
+        }
         this._order = this._order.filter(id => ids.has(id));
         for (const s of sessions) {
             if (!this._order.includes(s.id))
@@ -266,7 +289,26 @@ export default class ClaudeLightsExtension extends Extension {
         this._sessions = sessions.sort(
             (a, b) => this._order.indexOf(a.id) - this._order.indexOf(b.id));
         this._markFocusedSeen();
+        this._playSounds();
         this._render();
+    }
+
+    // One sound per newly pulsing light. Each pulse is keyed by state and
+    // the time it was entered, so a pulse sounds once however often the
+    // lights refresh.
+    _playSounds() {
+        let sound = null;
+        for (const s of this._sessions) {
+            if (!this._pulses(s))
+                continue;
+            const key = `${this._displayState(s)}:${stateSince(s)}`;
+            if (this._sounded.get(s.id) === key)
+                continue;
+            this._sounded.set(s.id, key);
+            sound ??= SOUNDS[this._displayState(s)];
+        }
+        if (sound && this._settings.get_boolean('sounds'))
+            global.display.get_sound_player().play_from_theme(sound, this.metadata.name, null);
     }
 
     // The session's terminal: the remembered window while it is still open,
@@ -342,6 +384,12 @@ export default class ClaudeLightsExtension extends Extension {
                 }
                 this._rows.set(s.id, {item, dot});
             }
+            this._button.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+            this._soundsItem = new PopupMenu.PopupSwitchMenuItem('Sounds',
+                this._settings.get_boolean('sounds'));
+            this._soundsItem.connect('toggled', (_item, state) =>
+                this._settings.set_boolean('sounds', state));
+            this._button.menu.addMenuItem(this._soundsItem);
             this._button.visible = this._sessions.length > 0;
         }
         for (const s of this._sessions) {

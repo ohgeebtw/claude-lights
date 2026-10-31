@@ -3,6 +3,15 @@
 All notable changes to Claude Lights. Versions match the extension's
 `metadata.json` version.
 
+## 10 - 2026-10-31
+
+### Added
+
+- Sounds: a light that starts to pulse yellow or red plays
+  `window-attention`, green and the green ring play `message-new-instant`.
+  A **Sounds** switch in the menu mutes them; the setting is
+  remembered.
+
 ## 9 - 2026-10-21
 
 ### Fixed

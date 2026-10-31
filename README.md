@@ -20,6 +20,11 @@ that session's terminal window, jump to it from the menu or send it a message.
 A seen green ring turns into a blue ring. A light that changes to a new state
 pulses again. Blue lights never pulse, they're work in progress.
 
+A light that starts to pulse also plays a sound: `window-attention` for
+yellow and red, `message-new-instant` for green and the green ring.
+Turn sounds off with the **Sounds** switch at the bottom of the menu; the
+setting is remembered.
+
 Lights keep their position (ordered by session start; drag them by the
 grip in the menu) and disappear when the session ends. Click them for a list with each session's title (the same one
 your terminal shows, or the name set with `/rename`), state and time in that
