@@ -3,6 +3,14 @@
 All notable changes to Claude Lights. Versions match the extension's
 `metadata.json` version.
 
+## 11 - 2026-11-04
+
+### Fixed
+
+- GNOME 50 and 51 support. GNOME 51 removed `St.BoxLayout`'s `vertical`
+  property, so building a menu row failed and no lights showed; rows now
+  use `orientation` where available.
+
 ## 10 - 2026-10-31
 
 ### Added

@@ -2,8 +2,8 @@
   "uuid": "claude-lights@ohgeebtw.github.io",
   "name": "Claude Lights",
   "description": "One top bar light per running Claude Code session: blue while working, yellow when it needs you, green when done, red on error.",
-  "shell-version": ["45", "46", "47", "48", "49"],
+  "shell-version": ["45", "46", "47", "48", "49", "50", "51"],
   "settings-schema": "org.gnome.shell.extensions.claude-lights",
   "url": "https://github.com/ohgeebtw/claude-lights",
-  "version": 10
+  "version": 11
 }

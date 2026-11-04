@@ -489,10 +489,14 @@ export default class ClaudeLightsExtension extends Extension {
         const menuDot = makeDot(this._displayState(s));
         item.add_child(menuDot);
         const text = new St.BoxLayout({
-            vertical: true,
             x_expand: true,
             y_align: Clutter.ActorAlign.CENTER,
         });
+        // GNOME 48 added `orientation` and GNOME 51 removed `vertical`.
+        if ('orientation' in text)
+            text.orientation = Clutter.Orientation.VERTICAL;
+        else
+            text.vertical = true;
         const label = new St.Label({text: this._itemText(s)});
         const tasks = new St.Label({style_class: 'claude-lights-tasks', text: this._tasksText(s)});
         tasks.visible = tasks.text !== '';
