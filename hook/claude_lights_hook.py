@@ -208,12 +208,33 @@ def main():
         record["tasks"] = task_summary(running_tasks(data))
     # A background agent finished after the turn: if nothing else runs, the
     # session is done. Claude may not wake up to fire another Stop.
+    agent = data.get("agent_id") if isinstance(data.get("agent_id"), str) else ""
+    asker_stopped = event == "SubagentStop" and record.get("state") == "attention" \
+        and record.get("attention_by") == agent
     if event == "SubagentStop":
-        if record.get("turn_active") is not False or record.get("state") != "background":
+        if not asker_stopped and (record.get("turn_active") is not False
+                                  or record.get("state") != "background"):
             return
-        remaining = running_tasks(data, exclude_agent=data.get("agent_id"))
+        remaining = running_tasks(data, exclude_agent=agent)
         record["tasks"] = task_summary(remaining)
-        state = "background" if remaining else "done"
+        if record.get("turn_active") is not False:
+            state = "working"
+        else:
+            state = "background" if remaining else "done"
+    # A pending question or permission prompt stays yellow until the agent
+    # that asked moves on. Other agents keep running tools meanwhile.
+    if record.get("state") == "attention":
+        if state == "attention":
+            agent = record.get("attention_by", agent)
+        elif not (asker_stopped
+                  or agent == record.get("attention_by", "")
+                  or event in ("UserPromptSubmit", "StopFailure", "SessionStart")):
+            state = "attention"
+            agent = record.get("attention_by", "")
+    if state == "attention":
+        record["attention_by"] = agent
+    else:
+        record.pop("attention_by", None)
     # The idle notification is a fallback for turns that ended without a Stop
     # (Esc). It must not hide a ring, a pending question or an error.
     if event == "Notification" and data.get("notification_type") == "idle_prompt" \

@@ -3,6 +3,14 @@
 All notable changes to Claude Lights. Versions match the extension's
 `metadata.json` version.
 
+## Unreleased
+
+### Fixed
+
+- Yellow no longer turns blue while background agents keep running tools.
+  A question or permission prompt stays yellow until the agent that asked
+  moves on or stops, you send a prompt, or the turn fails.
+
 ## 11 - 2026-11-04
 
 ### Fixed
